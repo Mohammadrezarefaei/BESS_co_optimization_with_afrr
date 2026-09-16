@@ -14,10 +14,14 @@ An advanced **Mixed-Integer Linear Programming (MILP)** optimization engine desi
 Explore the live web application: [Streamlit Cloud App](https://besscooptimizationwithafrr-jkq92wbjpfnwquluemghnj.streamlit.app/)
 
 ### 📈 24-Hour Multi-Layer Dispatch Profile
-![Dark Theme Optimization Chart](assets/german_bess_co_optimization_dark.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Mohammadrezarefaei/BESS_co_optimization_with_afrr/main/assets/german_bess_co_optimization_dark.png" alt="German BESS Co-Optimization Dark Chart" width="100%">
+</p>
 
 ### 🎬 Chronological Dispatch Animation
-![BESS Dispatch GIF](assets/bess_dispatch_animation.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Mohammadrezarefaei/BESS_co_optimization_with_afrr/main/assets/bess_dispatch_animation.gif" alt="BESS Dispatch Animation GIF" width="100%">
+</p>
 
 ---
 
@@ -32,7 +36,7 @@ BESS_co_optimization_with_afrr/
 ├── app.py                          # Streamlit interactive web dashboard
 │
 ├── data/
-│   ├── german_market_sample.csv    # Optimized market dispatch results & prices
+│   ├── german_market_sample.csv    # Optimized market dispatch results & prices (CSV)
 │   └── industrial_load_profile.csv # Industrial consumption load curves
 │
 ├── src/
