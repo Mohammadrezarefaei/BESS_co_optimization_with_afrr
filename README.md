@@ -25,6 +25,25 @@ Explore the live web application: [Streamlit Cloud App](https://besscooptimizati
 
 ---
 
+## 📋 Optimization Results & CSV Data Table Preview
+
+The following table represents the exact snapshot of `data/german_bess_co_optimization_results.csv`, containing optimized Day-Ahead prices, aFRR capacity reservations, power dispatches, and battery State of Charge (SoC):
+
+| Timestamp | DA Price (€/MWh) | aFRR Cap Price (€/MW/h) | Discharge (MW) | aFRR Reserved (MW) | SoC (MWh) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **2026-06-01 00:00:00** | 84.97 | 33.37 | 0.00 | 5.00 | 5.00 |
+| **2026-06-01 01:00:00** | 89.41 | 34.96 | 0.00 | 5.00 | 5.00 |
+| **2026-06-01 02:00:00** | 107.26 | 30.09 | 0.00 | 5.00 | 5.00 |
+| **2026-06-01 03:00:00** | 124.46 | 32.95 | 0.00 | 5.00 | 5.00 |
+| **2026-06-01 04:00:00** | 113.17 | 27.80 | 0.00 | 5.00 | 5.00 |
+| **2026-06-01 05:00:00** | 116.82 | 26.16 | 0.00 | 5.00 | 5.00 |
+| **2026-06-01 06:00:00** | 135.70 | 23.88 | 3.61 | 1.39 | 5.00 |
+| **2026-06-01 07:00:00** | 125.36 | 33.91 | 0.21 | 4.79 | 1.08 |
+| **2026-06-01 08:00:00** | 107.98 | 30.73 | 0.00 | 5.00 | 0.84 |
+| **2026-06-01 09:00:00** | 110.67 | 29.58 | 0.00 | 5.00 | 0.84 |
+
+---
+
 ## 🗂️ Repository Architecture
 
 ```text
