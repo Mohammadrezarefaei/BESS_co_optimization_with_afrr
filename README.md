@@ -32,7 +32,8 @@ BESS_co_optimization_with_afrr/
 ├── app.py                          # Streamlit interactive web dashboard
 │
 ├── data/
-│   └── german_market_sample.csv    # Market price curves & industrial load profiles
+│   ├── german_market_sample.csv    # Optimized market dispatch results & prices
+│   └── industrial_load_profile.csv # Industrial consumption load curves
 │
 ├── src/
 │   ├── __init__.py
