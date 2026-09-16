@@ -31,24 +31,25 @@ Explore the live web application: [Streamlit Cloud App](https://besscooptimizati
 BESS_co_optimization_with_afrr/
 │
 ├── .gitignore
+├── BESS_co_optimization_with_afrr.ipynb
 ├── README.md                       # Comprehensive project documentation
 ├── requirements.txt                # Python dependencies
 ├── app.py                          # Streamlit interactive web dashboard
 │
+├── assets/
+│   ├── bess_dispatch_animation.gif         # 24-hour animated dispatch sequence
+│   └── german_bess_co_optimization_dark.png # High-resolution analytical chart
+│
 ├── data/
-│   ├── german_market_sample.csv    # Optimized market dispatch results & prices (CSV)
-│   └── industrial_load_profile.csv # Industrial consumption load curves
+│   ├── german_bess_co_optimization_results.csv # Optimized market dispatch results & prices (CSV)
+│   └── industrial_load_profile.csv             # Industrial consumption load curves
 │
 ├── src/
 │   ├── __init__.py
-│   ├── engine.py                   # Core MILP co-optimization engine (PuLP / CBC)
-│   └── utils.py                    # Financial calculation & export helpers
+│   ├── engine.py                               # Core MILP co-optimization engine (PuLP / CBC)
+│   └── utils.py                                # Financial calculation & export helpers
 │
-├── tests/
-│   ├── __init__.py
-│   ├── test_market_data.py         # Schema and data integrity tests
-│   └── test_optimization.py        # SoC bounds, binary logic, and solver feasibility tests
-│
-└── assets/
-    ├── german_bess_co_optimization_dark.png # High-resolution analytical chart
-    └── bess_dispatch_animation.gif          # 24-hour animated dispatch sequence
+└── tests/
+    ├── __init__.py
+    ├── test_market_data.py                     # Schema and data integrity tests
+    └── test_optimization.py                    # SoC bounds, binary logic, and solver feasibility tests
