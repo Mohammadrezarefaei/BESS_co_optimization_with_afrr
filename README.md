@@ -14,14 +14,10 @@ An advanced **Mixed-Integer Linear Programming (MILP)** optimization engine desi
 Explore the live web application: [Streamlit Cloud App](https://besscooptimizationwithafrr-jkq92wbjpfnwquluemghnj.streamlit.app/)
 
 ### 📈 24-Hour Multi-Layer Dispatch Profile
-<p align="center">
-  <img src="./assets/german_bess_co_optimization_dark.png" alt="German BESS Co-Optimization Dark Chart" width="100%">
-</p>
+![Dark Theme Optimization Chart](assets/german_bess_co_optimization_dark.png)
 
 ### 🎬 Chronological Dispatch Animation
-<p align="center">
-  <img src="./assets/bess_dispatch_animation.gif" alt="BESS Dispatch Animation GIF" width="100%">
-</p>
+![BESS Dispatch GIF](assets/bess_dispatch_animation.gif)
 
 ---
 
