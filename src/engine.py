@@ -29,6 +29,7 @@ def generate_german_market_data(time_steps: int = 24) -> pd.DataFrame:
     
     return df
 
+
 def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, max_power_mw: float, grid_fee_penalty_rate: float) -> pd.DataFrame:
     """
     MILP Optimization Engine using PuLP for co-optimizing Day-Ahead arbitrage,
@@ -49,8 +50,12 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
     SoC = pulp.LpVariable.dicts("SoC", time_index, lowBound=0.0, upBound=cap_e, cat=pulp.LpContinuous)
     Net_Peak = pulp.LpVariable("Net_Peak", lowBound=0.0, cat=pulp.LpContinuous)
     
+    # Constants
     efficiency = 0.88
     eta = float(np.sqrt(efficiency))
+    
+    # FIX: Use inverse multiplication (1.0 / eta) instead of division to avoid TypeError with LpVariable
+    inv_eta = 1.0 / eta 
     
     # Objective Function
     da_revenue = pulp.lpSum([(P_dis[t] - P_ch[t]) * float(market_df.loc[t, "DA_Price_EUR_MWh"]) for t in time_index])
@@ -67,19 +72,21 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
         net_load_t = float(market_df.loc[t, "Industrial_Load_MW"]) + P_ch[t] - P_dis[t]
         model += Net_Peak >= net_load_t
         
+        # State of Charge Constraints (Multiplied by inv_eta instead of dividing)
         if t == 0:
-            model += SoC[t] == (0.5 * cap_e) + (P_ch[t] * eta) - (P_dis[t] / eta)
+            model += SoC[t] == (0.5 * cap_e) + (P_ch[t] * eta) - (P_dis[t] * inv_eta)
         else:
-            model += SoC[t] == SoC[t-1] + (P_ch[t] * eta) - (P_dis[t] / eta)
+            model += SoC[t] == SoC[t-1] + (P_ch[t] * eta) - (P_dis[t] * inv_eta)
             
-        model += SoC[t] >= aFRR_cap[t] / eta
+        model += SoC[t] >= aFRR_cap[t] * inv_eta
         model += SoC[t] <= cap_e - (aFRR_cap[t] * eta)
     
+    # Solve the model silently
     model.solve(pulp.PULP_CBC_CMD(msg=False))
     
     results_df = market_df.copy()
     
-    # Extract optimized values
+    # Extract optimized values safely
     results_df["Optimized_Charge_MW"] = [float(P_ch[t].varValue or 0.0) for t in time_index]
     results_df["Optimized_Discharge_MW"] = [float(P_dis[t].varValue or 0.0) for t in time_index]
     results_df["aFRR_Reserved_MW"] = [float(aFRR_cap[t].varValue or 0.0) for t in time_index]
