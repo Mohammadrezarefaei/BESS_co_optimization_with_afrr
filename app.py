@@ -7,9 +7,9 @@ def calculate_financial_summary(results_df: pd.DataFrame) -> dict:
     da_rev = sum((results_df["Optimized_Discharge_MW"] - results_df["Optimized_Charge_MW"]) * results_df["DA_Price_EUR_MWh"])
     afrr_rev = sum(results_df["aFRR_Reserved_MW"] * results_df["aFRR_Price_EUR_MW"])
     return {
-        "DA_Revenue_EUR": da_rev,
-        "aFRR_Revenue_EUR": afrr_rev,
-        "Total_Revenue_EUR": da_rev + afrr_rev
+        "DA_Revenue_EUR": float(da_rev),
+        "aFRR_Revenue_EUR": float(afrr_rev),
+        "Total_Revenue_EUR": float(da_rev + afrr_rev)
     }
 
 st.set_page_config(page_title="German BESS Co-Optimization & aFRR", layout="wide", initial_sidebar_state="expanded")
