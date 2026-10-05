@@ -3,6 +3,10 @@ import numpy as np
 import pulp
 
 def generate_german_market_data(time_steps: int = 24) -> pd.DataFrame:
+    """
+    Generates synthetic but realistic German market data for 24 hours.
+    Includes Day-Ahead prices, aFRR capacity prices, and an industrial load profile.
+    """
     np.random.seed(42)
     time_index = range(time_steps)
     
@@ -26,6 +30,10 @@ def generate_german_market_data(time_steps: int = 24) -> pd.DataFrame:
     return df
 
 def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, max_power_mw: float, grid_fee_penalty_rate: float) -> pd.DataFrame:
+    """
+    MILP Optimization Engine using PuLP for co-optimizing Day-Ahead arbitrage,
+    aFRR capacity provision, and peak shaving.
+    """
     time_steps = int(len(market_df))
     time_index = list(range(time_steps))
     
@@ -34,44 +42,24 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
     max_p = float(max_power_mw)
     cap_e = float(capacity_mwh)
     
-    P_ch = {}
-    P_dis = {}
-    aFRR_cap = {}
-    SoC = {}
-    
-    # Defining variables using ONLY the name to bypass strict LpVariable signatures.
-    # Continuous is the default category in PuLP.
-    for t in time_index:
-        P_ch[t] = pulp.LpVariable(f"P_ch_{t}")
-        P_dis[t] = pulp.LpVariable(f"P_dis_{t}")
-        aFRR_cap[t] = pulp.LpVariable(f"aFRR_cap_{t}")
-        SoC[t] = pulp.LpVariable(f"SoC_{t}")
-        
-        # Adding bounds explicitly as constraints
-        model += P_ch[t] >= 0.0
-        model += P_ch[t] <= max_p
-        
-        model += P_dis[t] >= 0.0
-        model += P_dis[t] <= max_p
-        
-        model += aFRR_cap[t] >= 0.0
-        model += aFRR_cap[t] <= max_p
-        
-        model += SoC[t] >= 0.0
-        model += SoC[t] <= cap_e
-        
-    Net_Peak = pulp.LpVariable("Net_Peak")
-    model += Net_Peak >= 0.0
+    # Using standard PuLP dictionaries for clean and robust variable creation
+    P_ch = pulp.LpVariable.dicts("P_ch", time_index, lowBound=0.0, upBound=max_p, cat=pulp.LpContinuous)
+    P_dis = pulp.LpVariable.dicts("P_dis", time_index, lowBound=0.0, upBound=max_p, cat=pulp.LpContinuous)
+    aFRR_cap = pulp.LpVariable.dicts("aFRR_cap", time_index, lowBound=0.0, upBound=max_p, cat=pulp.LpContinuous)
+    SoC = pulp.LpVariable.dicts("SoC", time_index, lowBound=0.0, upBound=cap_e, cat=pulp.LpContinuous)
+    Net_Peak = pulp.LpVariable("Net_Peak", lowBound=0.0, cat=pulp.LpContinuous)
     
     efficiency = 0.88
     eta = float(np.sqrt(efficiency))
     
+    # Objective Function
     da_revenue = pulp.lpSum([(P_dis[t] - P_ch[t]) * float(market_df.loc[t, "DA_Price_EUR_MWh"]) for t in time_index])
     afrr_revenue = pulp.lpSum([aFRR_cap[t] * float(market_df.loc[t, "aFRR_Price_EUR_MW"]) for t in time_index])
     penalty_cost = Net_Peak * float(grid_fee_penalty_rate)
     
     model += (da_revenue + afrr_revenue - penalty_cost)
     
+    # Constraints
     for t in time_index:
         model += P_ch[t] + aFRR_cap[t] <= max_p
         model += P_dis[t] + aFRR_cap[t] <= max_p
@@ -91,14 +79,11 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
     
     results_df = market_df.copy()
     
-    def get_val(var):
-        val = var.varValue
-        return float(val) if val is not None else 0.0
-        
-    results_df["Optimized_Charge_MW"] = [get_val(P_ch[t]) for t in time_index]
-    results_df["Optimized_Discharge_MW"] = [get_val(P_dis[t]) for t in time_index]
-    results_df["aFRR_Reserved_MW"] = [get_val(aFRR_cap[t]) for t in time_index]
-    results_df["SoC_MWh"] = [get_val(SoC[t]) for t in time_index]
+    # Extract optimized values
+    results_df["Optimized_Charge_MW"] = [float(P_ch[t].varValue or 0.0) for t in time_index]
+    results_df["Optimized_Discharge_MW"] = [float(P_dis[t].varValue or 0.0) for t in time_index]
+    results_df["aFRR_Reserved_MW"] = [float(aFRR_cap[t].varValue or 0.0) for t in time_index]
+    results_df["SoC_MWh"] = [float(SoC[t].varValue or 0.0) for t in time_index]
     results_df["Net_Grid_Load_MW"] = results_df["Industrial_Load_MW"] + results_df["Optimized_Charge_MW"] - results_df["Optimized_Discharge_MW"]
     
     return results_df
