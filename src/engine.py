@@ -34,11 +34,19 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
     max_p = float(max_power_mw)
     cap_e = float(capacity_mwh)
     
-    P_ch = {t: pulp.LpVariable(f"P_ch_{t}", lowBound=0.0, upBound=max_p, cat=pulp.LpContinuous) for t in time_index}
-    P_dis = {t: pulp.LpVariable(f"P_dis_{t}", lowBound=0.0, upBound=max_p, cat=pulp.LpContinuous) for t in time_index}
-    aFRR_cap = {t: pulp.LpVariable(f"aFRR_cap_{t}", lowBound=0.0, upBound=max_p, cat=pulp.LpContinuous) for t in time_index}
-    SoC = {t: pulp.LpVariable(f"SoC_{t}", lowBound=0.0, upBound=cap_e, cat=pulp.LpContinuous) for t in time_index}
-    Net_Peak = pulp.LpVariable("Net_Peak", lowBound=0.0, cat=pulp.LpContinuous)
+    # تعریف متغیرها به روش کلاسیک و امن برای جلوگیری از TypeError در سرورهای ابری
+    P_ch = {}
+    P_dis = {}
+    aFRR_cap = {}
+    SoC = {}
+    
+    for t in time_index:
+        P_ch[t] = pulp.LpVariable(name="P_ch_" + str(t), lowBound=0.0, upBound=max_p, cat="Continuous")
+        P_dis[t] = pulp.LpVariable(name="P_dis_" + str(t), lowBound=0.0, upBound=max_p, cat="Continuous")
+        aFRR_cap[t] = pulp.LpVariable(name="aFRR_cap_" + str(t), lowBound=0.0, upBound=max_p, cat="Continuous")
+        SoC[t] = pulp.LpVariable(name="SoC_" + str(t), lowBound=0.0, upBound=cap_e, cat="Continuous")
+        
+    Net_Peak = pulp.LpVariable(name="Net_Peak", lowBound=0.0, cat="Continuous")
     
     efficiency = 0.88
     eta = float(np.sqrt(efficiency))
@@ -67,10 +75,16 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
     model.solve(pulp.PULP_CBC_CMD(msg=False))
     
     results_df = market_df.copy()
-    results_df["Optimized_Charge_MW"] = [float(P_ch[t].varValue or 0.0) for t in time_index]
-    results_df["Optimized_Discharge_MW"] = [float(P_dis[t].varValue or 0.0) for t in time_index]
-    results_df["aFRR_Reserved_MW"] = [float(aFRR_cap[t].varValue or 0.0) for t in time_index]
-    results_df["SoC_MWh"] = [float(SoC[t].varValue or 0.0) for t in time_index]
+    
+    # استخراج امن مقادیر برای جلوگیری از خطای NoneType
+    def get_val(var):
+        val = var.varValue
+        return float(val) if val is not None else 0.0
+        
+    results_df["Optimized_Charge_MW"] = [get_val(P_ch[t]) for t in time_index]
+    results_df["Optimized_Discharge_MW"] = [get_val(P_dis[t]) for t in time_index]
+    results_df["aFRR_Reserved_MW"] = [get_val(aFRR_cap[t]) for t in time_index]
+    results_df["SoC_MWh"] = [get_val(SoC[t]) for t in time_index]
     results_df["Net_Grid_Load_MW"] = results_df["Industrial_Load_MW"] + results_df["Optimized_Charge_MW"] - results_df["Optimized_Discharge_MW"]
     
     return results_df
