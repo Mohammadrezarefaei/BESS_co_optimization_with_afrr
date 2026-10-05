@@ -1,8 +1,6 @@
 import plotly.express as px
 import streamlit as st
 import pandas as pd
-
-# Import backend engine
 from src.engine import generate_german_market_data, run_co_optimization_with_afrr
 
 def calculate_financial_summary(results_df: pd.DataFrame) -> dict:
@@ -14,17 +12,10 @@ def calculate_financial_summary(results_df: pd.DataFrame) -> dict:
         "Total_Revenue_EUR": da_rev + afrr_rev
     }
 
-st.set_page_config(
-    page_title="German BESS Co-Optimization & aFRR",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+st.set_page_config(page_title="German BESS Co-Optimization & aFRR", layout="wide", initial_sidebar_state="expanded")
 
 st.title("⚡ German BESS Co-Optimization: Day-Ahead, aFRR & Peak Shaving")
-st.markdown(
-    "Advanced MILP optimization engine for utility-scale BESS operating in "
-    "European energy markets (§ 19 StromNEV & Regelleistung)."
-)
+st.markdown("Advanced MILP optimization engine for utility-scale BESS operating in European energy markets (§ 19 StromNEV & Regelleistung).")
 
 st.sidebar.header("System Configuration")
 bess_capacity = st.sidebar.slider("BESS Capacity (MWh)", 2.0, 50.0, 10.0, step=1.0)
@@ -54,24 +45,13 @@ st.subheader("📊 24-Hour Multi-Layer Dispatch Profile")
 fig = px.line(
     results,
     x="Timestamp",
-    y=[
-        "Industrial_Load_MW",
-        "Net_Grid_Load_MW",
-        "Optimized_Discharge_MW",
-        "aFRR_Reserved_MW",
-    ],
+    y=["Industrial_Load_MW", "Net_Grid_Load_MW", "Optimized_Discharge_MW", "aFRR_Reserved_MW"],
     labels={"value": "Power / Capacity (MW)", "Timestamp": "Time"},
     title="Power Dispatch, Load Profile & aFRR Capacity Reservation",
 )
 
 fig.update_layout(
-    legend=dict(
-        title="Metrics",
-        font=dict(color="black", size=12),
-        bgcolor="rgba(255, 255, 255, 0.9)",
-        bordercolor="black",
-        borderwidth=1,
-    ),
+    legend=dict(title="Metrics", font=dict(color="black", size=12), bgcolor="rgba(255, 255, 255, 0.9)", bordercolor="black", borderwidth=1),
     template="plotly_dark",
     hovermode="x unified",
 )
