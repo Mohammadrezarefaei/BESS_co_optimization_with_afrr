@@ -4,6 +4,9 @@ import pandas as pd
 from src.engine import generate_german_market_data, run_co_optimization_with_afrr
 
 def calculate_financial_summary(results_df: pd.DataFrame) -> dict:
+    """
+    Calculates total daily revenues based on the optimization output.
+    """
     da_rev = sum((results_df["Optimized_Discharge_MW"] - results_df["Optimized_Charge_MW"]) * results_df["DA_Price_EUR_MWh"])
     afrr_rev = sum(results_df["aFRR_Reserved_MW"] * results_df["aFRR_Price_EUR_MW"])
     return {
@@ -12,16 +15,19 @@ def calculate_financial_summary(results_df: pd.DataFrame) -> dict:
         "Total_Revenue_EUR": float(da_rev + afrr_rev)
     }
 
+# Streamlit page configuration
 st.set_page_config(page_title="German BESS Co-Optimization & aFRR", layout="wide", initial_sidebar_state="expanded")
 
 st.title("⚡ German BESS Co-Optimization: Day-Ahead, aFRR & Peak Shaving")
 st.markdown("Advanced MILP optimization engine for utility-scale BESS operating in European energy markets (§ 19 StromNEV & Regelleistung).")
 
+# Sidebar inputs
 st.sidebar.header("System Configuration")
 bess_capacity = st.sidebar.slider("BESS Capacity (MWh)", 2.0, 50.0, 10.0, step=1.0)
 bess_power = st.sidebar.slider("Max Power (MW)", 1.0, 25.0, 5.0, step=0.5)
 penalty_rate = st.sidebar.number_input("Grid Fee Penalty Rate (€/MW)", value=150.0, step=10.0)
 
+# Run optimization
 with st.spinner("Running MILP Optimization..."):
     market_df = generate_german_market_data()
     results = run_co_optimization_with_afrr(
@@ -31,6 +37,7 @@ with st.spinner("Running MILP Optimization..."):
         grid_fee_penalty_rate=float(penalty_rate),
     )
 
+# Dashboard metrics
 fin_summary = calculate_financial_summary(results)
 
 col1, col2, col3, col4 = st.columns(4)
@@ -42,6 +49,7 @@ col4.metric("Optimized Net Peak", f"{results['Net_Grid_Load_MW'].max():.2f} MW")
 st.markdown("---")
 st.subheader("📊 24-Hour Multi-Layer Dispatch Profile")
 
+# Data visualization
 fig = px.line(
     results,
     x="Timestamp",
