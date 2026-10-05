@@ -3,10 +3,6 @@ import numpy as np
 import pulp
 
 def generate_german_market_data(time_steps: int = 24) -> pd.DataFrame:
-    """
-    Generates synthetic but realistic German market data for 24 hours.
-    Includes Day-Ahead prices, aFRR capacity prices, and an industrial load profile.
-    """
     np.random.seed(42)
     time_index = range(time_steps)
     
@@ -30,10 +26,6 @@ def generate_german_market_data(time_steps: int = 24) -> pd.DataFrame:
     return df
 
 def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, max_power_mw: float, grid_fee_penalty_rate: float) -> pd.DataFrame:
-    """
-    MILP Optimization Engine using PuLP for co-optimizing Day-Ahead arbitrage,
-    aFRR capacity provision, and peak shaving.
-    """
     time_steps = int(len(market_df))
     time_index = list(range(time_steps))
     
@@ -47,28 +39,39 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
     aFRR_cap = {}
     SoC = {}
     
-    # 100% Bulletproof: Using strict positional arguments to prevent TypeError on Streamlit Cloud
-    # Arguments order: name, lowBound, upBound, cat
+    # Defining variables using ONLY the name to bypass strict LpVariable signatures.
+    # Continuous is the default category in PuLP.
     for t in time_index:
-        P_ch[t] = pulp.LpVariable(f"P_ch_{t}", 0.0, max_p, "Continuous")
-        P_dis[t] = pulp.LpVariable(f"P_dis_{t}", 0.0, max_p, "Continuous")
-        aFRR_cap[t] = pulp.LpVariable(f"aFRR_cap_{t}", 0.0, max_p, "Continuous")
-        SoC[t] = pulp.LpVariable(f"SoC_{t}", 0.0, cap_e, "Continuous")
+        P_ch[t] = pulp.LpVariable(f"P_ch_{t}")
+        P_dis[t] = pulp.LpVariable(f"P_dis_{t}")
+        aFRR_cap[t] = pulp.LpVariable(f"aFRR_cap_{t}")
+        SoC[t] = pulp.LpVariable(f"SoC_{t}")
         
-    # Net_Peak is unconstrained on the upper bound, so upBound is passed as None
-    Net_Peak = pulp.LpVariable("Net_Peak", 0.0, None, "Continuous")
+        # Adding bounds explicitly as constraints
+        model += P_ch[t] >= 0.0
+        model += P_ch[t] <= max_p
+        
+        model += P_dis[t] >= 0.0
+        model += P_dis[t] <= max_p
+        
+        model += aFRR_cap[t] >= 0.0
+        model += aFRR_cap[t] <= max_p
+        
+        model += SoC[t] >= 0.0
+        model += SoC[t] <= cap_e
+        
+    Net_Peak = pulp.LpVariable("Net_Peak")
+    model += Net_Peak >= 0.0
     
     efficiency = 0.88
     eta = float(np.sqrt(efficiency))
     
-    # Objective Function
     da_revenue = pulp.lpSum([(P_dis[t] - P_ch[t]) * float(market_df.loc[t, "DA_Price_EUR_MWh"]) for t in time_index])
     afrr_revenue = pulp.lpSum([aFRR_cap[t] * float(market_df.loc[t, "aFRR_Price_EUR_MW"]) for t in time_index])
     penalty_cost = Net_Peak * float(grid_fee_penalty_rate)
     
     model += (da_revenue + afrr_revenue - penalty_cost)
     
-    # Constraints
     for t in time_index:
         model += P_ch[t] + aFRR_cap[t] <= max_p
         model += P_dis[t] + aFRR_cap[t] <= max_p
@@ -84,12 +87,10 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
         model += SoC[t] >= aFRR_cap[t] / eta
         model += SoC[t] <= cap_e - (aFRR_cap[t] * eta)
     
-    # Solve the model silently
     model.solve(pulp.PULP_CBC_CMD(msg=False))
     
     results_df = market_df.copy()
     
-    # Helper to safely extract float values
     def get_val(var):
         val = var.varValue
         return float(val) if val is not None else 0.0
