@@ -59,3 +59,18 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
         if t == 0:
             model += SoC[t] == (0.5 * cap_e) + (P_ch[t] * eta) - (P_dis[t] / eta)
         else:
+            model += SoC[t] == SoC[t-1] + (P_ch[t] * eta) - (P_dis[t] / eta)
+            
+        model += SoC[t] >= aFRR_cap[t] / eta
+        model += SoC[t] <= cap_e - (aFRR_cap[t] * eta)
+    
+    model.solve(pulp.PULP_CBC_CMD(msg=False))
+    
+    results_df = market_df.copy()
+    results_df["Optimized_Charge_MW"] = [float(P_ch[t].varValue or 0.0) for t in time_index]
+    results_df["Optimized_Discharge_MW"] = [float(P_dis[t].varValue or 0.0) for t in time_index]
+    results_df["aFRR_Reserved_MW"] = [float(aFRR_cap[t].varValue or 0.0) for t in time_index]
+    results_df["SoC_MWh"] = [float(SoC[t].varValue or 0.0) for t in time_index]
+    results_df["Net_Grid_Load_MW"] = results_df["Industrial_Load_MW"] + results_df["Optimized_Charge_MW"] - results_df["Optimized_Discharge_MW"]
+    
+    return results_df
