@@ -39,13 +39,14 @@ def run_co_optimization_with_afrr(market_df: pd.DataFrame, capacity_mwh: float, 
     aFRR_cap = {}
     SoC = {}
     
+    # Passing arguments positionally: name, lowBound, upBound, cat
     for t in time_index:
-        P_ch[t] = pulp.LpVariable(f"P_ch_{t}", lowBound=0.0, upBound=max_p)
-        P_dis[t] = pulp.LpVariable(f"P_dis_{t}", lowBound=0.0, upBound=max_p)
-        aFRR_cap[t] = pulp.LpVariable(f"aFRR_cap_{t}", lowBound=0.0, upBound=max_p)
-        SoC[t] = pulp.LpVariable(f"SoC_{t}", lowBound=0.0, upBound=cap_e)
+        P_ch[t] = pulp.LpVariable(f"P_ch_{t}", 0.0, max_p, "Continuous")
+        P_dis[t] = pulp.LpVariable(f"P_dis_{t}", 0.0, max_p, "Continuous")
+        aFRR_cap[t] = pulp.LpVariable(f"aFRR_cap_{t}", 0.0, max_p, "Continuous")
+        SoC[t] = pulp.LpVariable(f"SoC_{t}", 0.0, cap_e, "Continuous")
         
-    Net_Peak = pulp.LpVariable("Net_Peak", lowBound=0.0)
+    Net_Peak = pulp.LpVariable("Net_Peak", 0.0, None, "Continuous")
     
     efficiency = 0.88
     eta = float(np.sqrt(efficiency))
