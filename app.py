@@ -5,7 +5,6 @@ import pandas as pd
 # Import backend engine
 from src.engine import generate_german_market_data, run_co_optimization_with_afrr
 
-# Helper function (Assuming this was in your src.utils)
 def calculate_financial_summary(results_df: pd.DataFrame) -> dict:
     da_rev = sum((results_df["Optimized_Discharge_MW"] - results_df["Optimized_Charge_MW"]) * results_df["DA_Price_EUR_MWh"])
     afrr_rev = sum(results_df["aFRR_Reserved_MW"] * results_df["aFRR_Price_EUR_MW"])
@@ -15,7 +14,6 @@ def calculate_financial_summary(results_df: pd.DataFrame) -> dict:
         "Total_Revenue_EUR": da_rev + afrr_rev
     }
 
-# --- Streamlit Configuration ---
 st.set_page_config(
     page_title="German BESS Co-Optimization & aFRR",
     layout="wide",
@@ -28,23 +26,20 @@ st.markdown(
     "European energy markets (§ 19 StromNEV & Regelleistung)."
 )
 
-# --- Sidebar Controls ---
 st.sidebar.header("System Configuration")
 bess_capacity = st.sidebar.slider("BESS Capacity (MWh)", 2.0, 50.0, 10.0, step=1.0)
 bess_power = st.sidebar.slider("Max Power (MW)", 1.0, 25.0, 5.0, step=0.5)
 penalty_rate = st.sidebar.number_input("Grid Fee Penalty Rate (€/MW)", value=150.0, step=10.0)
 
-# --- Run Optimization Engine ---
 with st.spinner("Running MILP Optimization..."):
     market_df = generate_german_market_data()
     results = run_co_optimization_with_afrr(
         market_df=market_df,
-        capacity_mwh=bess_capacity,
-        max_power_mw=bess_power,
-        grid_fee_penalty_rate=penalty_rate,
+        capacity_mwh=float(bess_capacity),
+        max_power_mw=float(bess_power),
+        grid_fee_penalty_rate=float(penalty_rate),
     )
 
-# --- Financial Summary Metrics ---
 fin_summary = calculate_financial_summary(results)
 
 col1, col2, col3, col4 = st.columns(4)
@@ -54,8 +49,6 @@ col3.metric("Combined Daily Revenue", f"€{fin_summary['Total_Revenue_EUR']:,.2
 col4.metric("Optimized Net Peak", f"{results['Net_Grid_Load_MW'].max():.2f} MW")
 
 st.markdown("---")
-
-# --- Plotly Interactive Chart ---
 st.subheader("📊 24-Hour Multi-Layer Dispatch Profile")
 
 fig = px.line(
@@ -84,5 +77,4 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig, use_container_width=True)
-
 st.success("✅ Optimization pipeline executed successfully with multi-market revenue stacking!")
